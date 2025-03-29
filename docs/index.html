@@ -3,10 +3,40 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>JSON Formatter</title>
+    <title>JSON Formatter, JS Runner & Daily Planner</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.14/codemirror.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.14/theme/material-darker.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.14/codemirror.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.14/mode/javascript/javascript.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.14/addon/edit/closebrackets.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.14/addon/hint/show-hint.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.14/addon/hint/javascript-hint.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.14/addon/hint/show-hint.min.css">
     <style>
         body {
             font-family: Arial, sans-serif;
+        }
+        .nav {
+            display: flex;
+            gap: 20px;
+            background: #333;
+            padding: 10px;
+        }
+        .nav button {
+            background: #555;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            cursor: pointer;
+        }
+        .nav button.active {
+            background: #777;
+        }
+        .container {
+            display: none;
+        }
+        .active-container {
+            display: block;
         }
         pre {
             background: #282c34;
@@ -16,61 +46,128 @@
             white-space: pre-wrap;
             word-wrap: break-word;
         }
-        .key { color: #d19a66; }
-        .string { color: #98c379; }
-        .number { color: #e5c07b; }
-        .boolean { color: #56b6c2; }
-        .null { color: #c678dd; }
+        .CodeMirror {
+            border: 1px solid #ccc;
+            height: auto;
+        }
     </style>
 </head>
 <body>
-<textarea id="json-input" rows="10" cols="50"></textarea><br>
-<button id="format-btn">Format JSON</button>
-<button id="minify-btn">Minify JSON</button>
-<pre id="json-output"></pre>
+<div class="nav">
+    <button id="json-tab" class="active">JSON Formatter</button>
+    <button id="js-tab">JS Runner</button>
+    <button id="planner-tab">Daily Planner</button>
+</div>
+
+<div id="json-container" class="container active-container">
+    <h3>JSON Formatter</h3>
+    <textarea id="json-input"></textarea>
+    <button id="format-btn">Format JSON</button>
+    <button id="minify-btn">Minify JSON</button>
+    <pre id="json-output"></pre>
+</div>
+
+<div id="js-container" class="container">
+    <h3>JavaScript Code Runner</h3>
+    <textarea id="js-code"></textarea>
+    <button id="run-js-btn">Run JavaScript</button>
+    <pre id="js-output"></pre>
+</div>
+
+<div id="planner-container" class="container">
+    <h3>Daily Planner</h3>
+    <textarea id="planner-input" placeholder="Enter your tasks here..."></textarea>
+    <button id="save-planner">Save</button>
+    <pre id="planner-output"></pre>
+</div>
 
 <script>
     document.addEventListener("DOMContentLoaded", function () {
-        const input = document.getElementById("json-input");
-        const output = document.getElementById("json-output");
-        const formatButton = document.getElementById("format-btn");
-        const minifyButton = document.getElementById("minify-btn");
+        const jsonEditor = CodeMirror.fromTextArea(document.getElementById("json-input"), {
+            mode: "application/json",
+            theme: "material-darker",
+            lineNumbers: true,
+            autoCloseBrackets: true,
+            extraKeys: { "Ctrl-Space": "autocomplete" }
+        });
 
-        function syntaxHighlight(json) {
-            return json.replace(/("(\\u[a-zA-Z0-9]{4}|\\[^u]|[^\\"])*"(\s*:)?|\b(true|false|null)\b|\b(-?\d+(\.\d*)?(e[+\-]?\d+)?)\b)/g, function (match) {
-                let cls = "number";
-                if (/^"/.test(match)) {
-                    if (/:$/.test(match)) {
-                        cls = "key";
-                    } else {
-                        cls = "string";
-                    }
-                } else if (/true|false/.test(match)) {
-                    cls = "boolean";
-                } else if (/null/.test(match)) {
-                    cls = "null";
+        const jsEditor = CodeMirror.fromTextArea(document.getElementById("js-code"), {
+            mode: "javascript",
+            theme: "material-darker",
+            lineNumbers: true,
+            autoCloseBrackets: true,
+            extraKeys: {
+                "Ctrl-Space": function(cm) {
+                    CodeMirror.commands.autocomplete(cm);
                 }
-                return `<span class="${cls}">${match}</span>`;
-            });
+            }
+        });
+
+        jsonEditor.setValue(JSON.stringify({
+            "name": "John Doe",
+            "age": 30,
+            "email": "john.doe@example.com",
+            "address": {
+                "street": "123 Main St",
+                "city": "New York",
+                "zip": "10001"
+            },
+            "hobbies": ["reading", "traveling", "coding"]
+        }, null, 4));
+
+        jsEditor.setValue("console.log('Hello, world!');\nfunction add(a, b) { return a + b; }\nconsole.log(add(5, 10));");
+
+        document.getElementById("format-btn").addEventListener("click", function () {
+            try {
+                const formattedJson = JSON.stringify(JSON.parse(jsonEditor.getValue()), null, 4);
+                document.getElementById("json-output").textContent = formattedJson;
+            } catch (error) {
+                document.getElementById("json-output").textContent = "Invalid JSON";
+            }
+        });
+
+        document.getElementById("minify-btn").addEventListener("click", function () {
+            try {
+                const minifiedJson = JSON.stringify(JSON.parse(jsonEditor.getValue()));
+                document.getElementById("json-output").textContent = minifiedJson;
+            } catch (error) {
+                document.getElementById("json-output").textContent = "Invalid JSON";
+            }
+        });
+
+        document.getElementById("run-js-btn").addEventListener("click", function () {
+            try {
+                const result = eval(jsEditor.getValue());
+                document.getElementById("js-output").textContent = result !== undefined ? result : "Executed successfully";
+            } catch (error) {
+                document.getElementById("js-output").textContent = "Error: " + error.message;
+            }
+        });
+
+        document.getElementById("json-tab").addEventListener("click", function() {
+            showContainer("json-container", "json-tab");
+        });
+
+        document.getElementById("js-tab").addEventListener("click", function() {
+            showContainer("js-container", "js-tab");
+        });
+
+        document.getElementById("planner-tab").addEventListener("click", function() {
+            showContainer("planner-container", "planner-tab");
+        });
+
+        document.getElementById("save-planner").addEventListener("click", function () {
+            const tasks = document.getElementById("planner-input").value;
+            document.getElementById("planner-output").textContent = tasks;
+        });
+
+        function showContainer(containerId, tabId) {
+            document.querySelectorAll(".container").forEach(c => c.classList.remove("active-container"));
+            document.getElementById(containerId).classList.add("active-container");
+
+            document.querySelectorAll(".nav button").forEach(b => b.classList.remove("active"));
+            document.getElementById(tabId).classList.add("active");
         }
-
-        formatButton.addEventListener("click", function () {
-            try {
-                const formattedJson = JSON.stringify(JSON.parse(input.value), null, 4);
-                output.innerHTML = syntaxHighlight(formattedJson);
-            } catch (error) {
-                output.textContent = "Invalid JSON";
-            }
-        });
-
-        minifyButton.addEventListener("click", function () {
-            try {
-                const minifiedJson = JSON.stringify(JSON.parse(input.value));
-                output.textContent = minifiedJson;
-            } catch (error) {
-                output.textContent = "Invalid JSON";
-            }
-        });
     });
 </script>
 </body>
