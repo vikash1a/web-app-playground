@@ -1,8 +1,41 @@
-<html>
+<!DOCTYPE html>
+<html lang="en">
 <head>
-    This is header.
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JSON Formatter</title>
 </head>
 <body>
-    This is a sample body
+<textarea id="json-input" rows="10" cols="50"></textarea><br>
+<button id="format-btn">Format JSON</button>
+<button id="minify-btn">Minify JSON</button>
+<pre id="json-output"></pre>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        const input = document.getElementById("json-input");
+        const output = document.getElementById("json-output");
+        const formatButton = document.getElementById("format-btn");
+        const minifyButton = document.getElementById("minify-btn");
+
+        formatButton.addEventListener("click", function () {
+            try {
+                const formattedJson = JSON.stringify(JSON.parse(input.value), null, 4);
+                output.textContent = formattedJson;
+            } catch (error) {
+                output.textContent = "Invalid JSON";
+            }
+        });
+
+        minifyButton.addEventListener("click", function () {
+            try {
+                const minifiedJson = JSON.stringify(JSON.parse(input.value));
+                output.textContent = minifiedJson;
+            } catch (error) {
+                output.textContent = "Invalid JSON";
+            }
+        });
+    });
+</script>
 </body>
 </html>
