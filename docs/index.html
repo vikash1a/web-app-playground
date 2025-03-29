@@ -4,6 +4,24 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>JSON Formatter</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+        }
+        pre {
+            background: #282c34;
+            color: #abb2bf;
+            padding: 10px;
+            border-radius: 5px;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+        .key { color: #d19a66; }
+        .string { color: #98c379; }
+        .number { color: #e5c07b; }
+        .boolean { color: #56b6c2; }
+        .null { color: #c678dd; }
+    </style>
 </head>
 <body>
 <textarea id="json-input" rows="10" cols="50"></textarea><br>
@@ -18,10 +36,28 @@
         const formatButton = document.getElementById("format-btn");
         const minifyButton = document.getElementById("minify-btn");
 
+        function syntaxHighlight(json) {
+            return json.replace(/("(\\u[a-zA-Z0-9]{4}|\\[^u]|[^\\"])*"(\s*:)?|\b(true|false|null)\b|\b(-?\d+(\.\d*)?(e[+\-]?\d+)?)\b)/g, function (match) {
+                let cls = "number";
+                if (/^"/.test(match)) {
+                    if (/:$/.test(match)) {
+                        cls = "key";
+                    } else {
+                        cls = "string";
+                    }
+                } else if (/true|false/.test(match)) {
+                    cls = "boolean";
+                } else if (/null/.test(match)) {
+                    cls = "null";
+                }
+                return `<span class="${cls}">${match}</span>`;
+            });
+        }
+
         formatButton.addEventListener("click", function () {
             try {
                 const formattedJson = JSON.stringify(JSON.parse(input.value), null, 4);
-                output.textContent = formattedJson;
+                output.innerHTML = syntaxHighlight(formattedJson);
             } catch (error) {
                 output.textContent = "Invalid JSON";
             }
